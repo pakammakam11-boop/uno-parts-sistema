@@ -1,0 +1,16 @@
+﻿__pycache__/
+.pytest_cache/
+data/generated/
+vault/
+.venv/
+data/out/
+data/uno.db
+data/uploads/
+data/test_user.txt
+data/suppliers.json
+data/hr.db
+private/
+.vercel/
+.env
+.env.*
+!deploy/.env.example

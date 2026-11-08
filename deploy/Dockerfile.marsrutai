@@ -1,0 +1,29 @@
+# Maršrutai (kolegos repo, Node/Hono + React dashboard) kaip UNO modulis /marsrutai.
+# Kontekstas: kolegos repo aplankas (compose: MARSRUTAI_DIR, numatyta ../../marsrutai); šio failo repo nekeičiamas.
+# Serveris paleidžiamas per tsx (kaip jų `npm run start`), todėl runtime vaizde lieka visos priklausomybės.
+ARG NODE_IMAGE=node:22.12-bookworm-slim
+
+FROM ${NODE_IMAGE} AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY packages/cli/package.json packages/cli/
+COPY packages/dashboard/package.json packages/dashboard/
+COPY packages/server/package.json packages/server/
+COPY packages/shared/package.json packages/shared/
+RUN npm ci --no-audit --no-fund
+COPY . .
+# Dashboard su base=/marsrutai/ (Caddy perduoda kelią be pakeitimų)
+RUN MARSRUTAI_BASE=/marsrutai/ npm run build
+
+FROM ${NODE_IMAGE}
+ENV NODE_ENV=production PORT=8787 MARSRUTAI_BASE=/marsrutai/
+WORKDIR /app
+COPY --from=build --chown=node:node /app /app
+# Scenarijai/PDF su DATABASE_URL laikomi Postgres; out/ ir data/ tik atsarginiam failų režimui
+RUN mkdir -p /app/out /app/data/scenarios && chown -R node:node /app/out /app/data
+USER node
+WORKDIR /app/packages/server
+EXPOSE 8787
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD ["node", "-e", "fetch('http://127.0.0.1:8787/api/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+CMD ["../../node_modules/.bin/tsx", "src/index.ts"]

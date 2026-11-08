@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121519">
+<link rel="manifest" href="/static/pwa/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/pwa/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="UNO">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Demo įmonė: apskaita</title>
+<link rel="stylesheet" href="/static/icons/style.css">
+<link rel="stylesheet" href="/static/ds.css">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="with-bar">
+<a class="skip" href="#main">Pereiti prie turinio</a>
+<div class="frame">
+  <aside class="side" aria-label="UNO Parts">
+    <a class="side-brand" href="/"><span class="mark" aria-hidden="true">UNO</span><span class="side-brand-txt"><b>UNO Parts</b><small>Apskaitos demo</small></span></a>
+    <nav class="sysnav" aria-label="Sistema">
+      <a href="/" data-testid="nav-overview"><i class="ph ph-squares-four" aria-hidden="true"></i><span>Apžvalga</span></a>
+      <a href="/hr" data-testid="nav-hr"><i class="ph ph-users" aria-hidden="true"></i><span>Personalas</span></a>
+      <a href="/marsrutai" data-testid="nav-routes"><i class="ph ph-truck" aria-hidden="true"></i><span>Maršrutai</span></a>
+      <a href="/apskaita" aria-current="page" data-testid="nav-accounting"><i class="ph ph-calculator" aria-hidden="true"></i><span>Apskaita</span></a>
+      <a href="/#saltiniai" class="sysnav-src" data-testid="nav-sources"><i class="ph ph-plugs" aria-hidden="true"></i><span>Šaltiniai</span></a>
+    </nav>
+    <div class="side-co"><b>Demo įmonė, UAB</b><span id="period">2026 m. spalis</span></div>
+    <nav class="rail" aria-label="Mėnesio uždarymas">
+    <ul class="steps">
+      <li><button data-view="overview" aria-current="page"><i class="ph ph-notebook"></i>Uždarymas<span class="badges" data-badge="overview"></span></button></li>
+      <li><button data-view="invoices"><i class="ph ph-receipt"></i>Sąskaitos<span class="badges" data-badge="invoices"></span></button></li>
+      <li><button data-view="bank"><i class="ph ph-bank"></i>Bankas<span class="badges" data-badge="bank"></span></button></li>
+      <li><button data-view="payroll"><i class="ph ph-users-three"></i>DU ir tabelis<span class="badges" data-badge="payroll"></span></button></li>
+      <li><button data-view="declarations"><i class="ph ph-stamp"></i>Deklaracijos<span class="badges" data-badge="declarations"></span></button></li>
+      <li><button data-view="control"><i class="ph ph-check-square-offset"></i>Kontrolė ir AI<span class="badges" data-badge="control"></span></button></li>
+    </ul>
+    </nav>
+    <div class="side-foot side-note"><i class="ph ph-lock-simple" aria-hidden="true"></i><span>Viskas skaičiuojama šiame kompiuteryje. Į AI keliauja tik pseudonimai.</span></div>
+  </aside>
+
+  <div class="stage">
+  <main class="page" id="main" tabindex="-1">
+    <!-- APŽVALGA -->
+    <section class="view on" id="view-overview" aria-labelledby="h-overview">
+      <div class="head">
+        <div>
+          <h1 id="h-overview">Spalio mėnesio uždarymas</h1>
+          <p class="lede">Kiekviena buhalterės kainoraščio eilutė ir ką jos darbe atlieka sistema. Skaičiuoja kodas, sprendžia žmogus.</p>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="run-all"><i class="ph ph-play"></i>Paleisti uždarymą</button>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel ledger-wrap">
+          <table class="ledger" id="ledger">
+            <thead><tr><th>Paslauga</th><th class="num">€ / mėn.</th><th class="what">Ką daro sistema</th><th>Automatizuojama</th><th>Šio mėnesio rezultatas</th></tr></thead>
+            <tbody></tbody>
+            <tfoot></tfoot>
+          </table>
+        </div>
+        <div class="grid-2">
+          <div class="panel"><div class="panel-pad"><h2>Uždarymo kontrolinis sąrašas</h2></div><ul class="checklist" id="checklist"><li><span></span><span class="skeleton"></span><span></span></li></ul></div>
+          <div class="panel panel-pad">
+            <h2>Kas lieka žmogui</h2>
+            <ul class="lede" style="padding-left:18px;margin:0;display:grid;gap:6px">
+              <li>Patvirtinti mokėjimus banke (sistema paruošia pain.001 failą).</li>
+              <li>Pateikti SAM, GPM313, PVM ir i.SAF (sistema patikrina sumas prieš pateikimą).</li>
+              <li>1-SD / 2-SD pranešimai Sodrai, sprendimai dėl neatitikimų.</li>
+              <li>Atsakymai iš vadovų ir tiekėjų: laiškų juodraščiai jau paruošti.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULIAI: šablonas pildomas iš JS -->
+    <section class="view" id="view-invoices" data-module="invoices"></section>
+    <section class="view" id="view-bank" data-module="bank"></section>
+    <section class="view" id="view-payroll" data-module="payroll"></section>
+
+    <!-- DEKLARACIJOS -->
+    <section class="view" id="view-declarations" data-module="declarations"></section>
+
+    <!-- KONTROLĖ -->
+    <section class="view" id="view-control" data-module="control"></section>
+  </main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

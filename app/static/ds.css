@@ -1,0 +1,348 @@
+/* UNO dizaino sistema: tokenai, šriftai, bazė, bendras karkasas ir komponentai.
+   Kraunama PIRMA visuose puslapiuose (/, /hr, /apskaita, /app); modulių CSS tik papildo.
+   Kryptis: sandėlio grafitas + signalinė oranžinė, šviesi tema. Žr. .flow/2026-11-07-ui-redesign/DESIGN.md */
+
+/* ---------- Šriftai (self-host, OFL) ---------- */
+@font-face { font-family: "Archivo"; font-style: normal; font-display: swap; font-weight: 100 900; font-stretch: 62% 125%;
+  src: url(fonts/archivo-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Archivo"; font-style: normal; font-display: swap; font-weight: 100 900; font-stretch: 62% 125%;
+  src: url(fonts/archivo-latin-ext.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Martian Mono"; font-style: normal; font-display: swap; font-weight: 100 800;
+  src: url(fonts/martian-mono-latin.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Martian Mono"; font-style: normal; font-display: swap; font-weight: 100 800;
+  src: url(fonts/martian-mono-latin-ext.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+:root {
+  color-scheme: light;
+  /* Neutralūs: šaltas grafitas */
+  --canvas: #f3f4f6;
+  --surface: #fdfdfe;
+  --surface-2: #f0f2f5;
+  --surface-3: #e8ebef;
+  --line: #e3e6eb;
+  --line-strong: #cbd0d8;
+  --field-line: #9aa2ae;
+  --ink: #14171c;
+  --ink-2: #434a55;
+  --ink-3: #5f6773;
+  /* Chrome: šoninė ir apatinė juostos */
+  --chrome: #121519;
+  --chrome-2: #1b1f25;
+  --chrome-3: #262b33;
+  --chrome-line: #252a31;
+  --chrome-ink: #c9ced6;
+  --chrome-ink-2: #8c94a0;
+  --chrome-ink-strong: #f4f5f7;
+  /* Vienintelis akcentas: signalinė oranžinė */
+  --accent: #e0531f;
+  --accent-strong: #c4420e;
+  --accent-press: #a8380b;
+  --accent-ink: #a8380b;
+  --accent-wash: #fdeee6;
+  --accent-line: #f3c4ab;
+  /* Semantika: spalva + ikona + tekstas */
+  --good: #157a4a; --good-wash: #e5f4ec; --good-line: #b9dec9;
+  --warn: #8a6200; --warn-wash: #fcf3d9; --warn-line: #ebd592;
+  --crit: #c21f3a; --crit-wash: #fbe9ec; --crit-line: #f0bac4;
+  --info: #2f5c8f; --info-wash: #e7eff8; --info-line: #bfd3ea;
+  /* Duomenų spalvos (validate_palette.js PASS) */
+  --series-vln: #2f64a8;
+  --series-kns: #d9601a;
+  --series-muted: #c5ccd6;
+  /* Tipografija */
+  --font: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Martian Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --wide: 114%;
+  --fs-xs: 12px; --fs-sm: 13px; --fs-md: 14px; --fs-base: 15px; --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 30px; --fs-hero: 44px;
+  /* Forma ir gylis */
+  --r-chip: 6px; --r-ctl: 8px; --r-box: 12px;
+  --e1: 0 1px 2px rgb(20 23 28 / .04), 0 4px 14px -8px rgb(20 23 28 / .10);
+  --e2: 0 1px 2px rgb(20 23 28 / .06), 0 16px 40px -12px rgb(20 23 28 / .28);
+  --e3: 0 28px 72px -18px rgb(20 23 28 / .38);
+  --ring: 0 0 0 3px rgb(224 83 31 / .22);
+  /* Judesys */
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --ease-drawer: cubic-bezier(.32, .72, 0, 1);
+  --t-press: 120ms; --t-fast: 160ms; --t-base: 220ms;
+  /* Karkasas */
+  --side-w: 248px;
+  --tap: 44px;
+  --bar-h: 64px;
+
+  /* Senų modulių vardai, susieti su nauja sistema */
+  --paper: var(--canvas);
+  --sheet: var(--surface);
+  --rule: var(--line);
+  --rule-strong: var(--line-strong);
+  --err: var(--crit); --err-wash: var(--crit-wash);
+  --r: var(--r-ctl);
+  --ease: var(--ease-out);
+  --shadow: var(--e1);
+  --sans: var(--font);
+  --mono: var(--font);
+}
+
+/* ---------- Bazė ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { color-scheme: light; -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font: 400 var(--fs-base)/1.5 var(--font); font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+[hidden] { display: none !important; }
+::selection { background: var(--accent-wash); color: var(--accent-press); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+input, select, textarea, button { font-family: inherit; }
+input, select, textarea { caret-color: var(--accent-strong); }
+a { color: var(--accent-ink); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+h1, h2, h3, h4 { text-wrap: balance; }
+h1 { font-size: var(--fs-2xl); line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 6px; font-weight: 650; font-stretch: var(--wide); }
+h2 { font-size: var(--fs-lg); line-height: 1.3; margin: 0 0 12px; font-weight: 620; letter-spacing: -0.01em; }
+h3 { font-size: var(--fs-base); font-weight: 600; }
+p { text-wrap: pretty; }
+.lede { margin: 0; color: var(--ink-2); max-width: 68ch; }
+.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mono { font-variant-numeric: tabular-nums; }
+.code, .sha { font-family: var(--font-mono); }
+.ph { font-size: 1.1em; line-height: 1; vertical-align: -0.15em; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.muted { color: var(--ink-3); }
+.hint { color: var(--ink-3); font-size: var(--fs-md); margin: 4px 0 0; }
+.skip { position: absolute; left: 12px; top: -48px; z-index: 100; background: var(--ink); color: #fdfdfe; padding: 10px 14px; border-radius: var(--r-ctl); text-decoration: none; transition: transform var(--t-fast) var(--ease-out); }
+.skip:focus { transform: translateY(60px); }
+
+/* ---------- Karkasas: grafito šoninė + scena ---------- */
+.frame { display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100dvh; }
+.side { position: sticky; top: 0; height: 100dvh; overflow-y: auto; background: var(--chrome); color: var(--chrome-ink); display: flex; flex-direction: column; gap: 6px; padding: 16px 12px 14px; scrollbar-color: var(--chrome-3) transparent; }
+.stage { min-width: 0; display: flex; flex-direction: column; }
+.stage > main, .stage-main { flex: 1; width: 100%; min-width: 0; }
+main:focus { outline: none; }
+
+.side-brand { display: flex; align-items: center; gap: 10px; padding: 6px 8px 14px; color: var(--chrome-ink-strong); text-decoration: none; border-bottom: 1px solid var(--chrome-line); margin-bottom: 8px; }
+.mark { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--accent-strong); color: #fff; font: 800 10.5px/1 var(--font); font-stretch: 112%; letter-spacing: .03em; box-shadow: inset 0 -2px 0 rgb(0 0 0 / .18), inset 0 1px 0 rgb(255 255 255 / .22); }
+.side-brand-txt { display: grid; line-height: 1.2; min-width: 0; }
+.side-brand-txt b { font-weight: 650; font-size: 15px; font-stretch: var(--wide); letter-spacing: -.01em; white-space: nowrap; }
+.side-brand-txt small { color: var(--chrome-ink-2); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side .demo-tag { margin-left: auto; }
+
+.side-label { margin: 14px 10px 4px; font-size: var(--fs-xs); font-weight: 500; color: var(--chrome-ink-2); }
+.sysnav { display: grid; gap: 2px; }
+.sysnav a, .side .tabs a, .side .steps button {
+  position: relative; display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px;
+  border: 0; border-radius: var(--r-ctl); background: none; color: var(--chrome-ink); font: 450 14px/1.25 var(--font);
+  text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out); }
+.sysnav a .ph, .side .tabs a .ph, .side .steps button .ph { font-size: 18px; color: var(--chrome-ink-2); transition: color var(--t-fast) var(--ease-out); flex: none; }
+@media (hover: hover) and (pointer: fine) {
+  .sysnav a:hover, .side .tabs a:hover, .side .steps button:hover { background: var(--chrome-2); color: var(--chrome-ink-strong); }
+  .sysnav a:hover .ph, .side .tabs a:hover .ph, .side .steps button:hover .ph { color: var(--chrome-ink); }
+}
+.sysnav a:active, .side .tabs a:active, .side .steps button:active { background: var(--chrome-3); }
+.sysnav a[aria-current="page"], .side .tabs a[aria-current="page"], .side .steps button[aria-current="page"] { background: var(--chrome-3); color: var(--chrome-ink-strong); font-weight: 600; box-shadow: inset 0 1px 0 rgb(255 255 255 / .04); }
+.sysnav a[aria-current="page"] .ph, .side .tabs a[aria-current="page"] .ph, .side .steps button[aria-current="page"] .ph { color: var(--accent); }
+.side :focus-visible { outline-color: var(--accent); outline-offset: -2px; }
+.sysnav-src { margin-top: 2px; }
+
+.side .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.side .steps button { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; min-height: 40px; padding: 8px 10px; }
+.side .tabs { display: grid; gap: 2px; padding: 0; margin: 0; max-width: none; }
+.side .tabs .count { margin-left: auto; }
+
+.side-co { margin: 10px 8px 6px; padding: 10px 10px; border-radius: var(--r-ctl); background: var(--chrome-2); display: grid; gap: 2px; }
+.side-co b { color: var(--chrome-ink-strong); font-weight: 600; font-size: 14px; }
+.side-co span { color: var(--chrome-ink-2); font-size: var(--fs-sm); }
+.side .field { padding: 6px 8px 10px; }
+.side .field label { color: var(--chrome-ink-2); }
+.side .field input { background: var(--chrome-2); border-color: var(--chrome-3); color: var(--chrome-ink-strong); color-scheme: dark; }
+
+.side-foot { margin-top: auto; padding: 12px 8px 2px; border-top: 1px solid var(--chrome-line); display: flex; align-items: center; gap: 10px; color: var(--chrome-ink-2); font-size: var(--fs-sm); }
+.side-foot .who-name { display: grid; line-height: 1.25; min-width: 0; flex: 1; }
+.side-foot .who-name b { color: var(--chrome-ink-strong); font-weight: 550; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-foot .who-name small { color: var(--chrome-ink-2); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side .side-foot .btn { height: 36px; width: 36px; padding: 0; justify-content: center; border-color: var(--chrome-3); background: var(--chrome-2); color: var(--chrome-ink); flex: none; }
+@media (hover: hover) and (pointer: fine) { .side .side-foot .btn:hover { background: var(--chrome-3); color: var(--chrome-ink-strong); border-color: var(--chrome-3); } }
+.side-note { display: flex; gap: 8px; align-items: flex-start; line-height: 1.4; }
+.side-note .ph { color: var(--accent); margin-top: 2px; }
+
+/* Scenos antraštė (puslapio pavadinimas + veiksmai) */
+.page-head, .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px 24px; margin-bottom: 20px; flex-wrap: wrap; }
+.page-head h1, .head h1 { margin-bottom: 4px; }
+
+/* ---------- Mygtukai ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: var(--r-ctl); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: 550 14px/1 var(--font); cursor: pointer; white-space: nowrap; text-decoration: none; box-shadow: 0 1px 1px rgb(20 23 28 / .04);
+  transition: background-color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out), transform var(--t-press) var(--ease-out); }
+.btn .ph { font-size: 17px; }
+@media (hover: hover) and (pointer: fine) { .btn:hover { border-color: var(--field-line); background: #fff; } }
+.btn:active:not([disabled]) { transform: scale(.97); }
+.btn.primary { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; box-shadow: 0 1px 2px rgb(168 56 11 / .25), inset 0 1px 0 rgb(255 255 255 / .14); }
+@media (hover: hover) and (pointer: fine) { .btn.primary:hover { background: var(--accent-press); border-color: var(--accent-press); } }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--ink-2); box-shadow: none; }
+@media (hover: hover) and (pointer: fine) { .btn.ghost:hover { background: var(--surface-2); border-color: transparent; color: var(--ink); } }
+.btn.danger { border-color: var(--crit-line); color: var(--crit); background: var(--surface); }
+@media (hover: hover) and (pointer: fine) { .btn.danger:hover { background: var(--crit-wash); border-color: var(--crit); } }
+.btn.small { height: 32px; padding: 0 10px; font-size: var(--fs-sm); gap: 6px; }
+.btn.small .ph { font-size: 15px; }
+.btn.icon { width: 38px; padding: 0; }
+.btn.block { width: 100%; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.btn[aria-busy="true"] { cursor: progress; }
+.file-btn input { display: none; }
+.linkish { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 4px; border: 0; background: none; color: var(--accent-ink); font: 550 13px var(--font); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--accent-line); }
+.linkish:hover { text-decoration-color: currentColor; }
+
+/* ---------- Paviršiai ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-box); box-shadow: var(--e1); }
+.panel-pad { padding: 18px 20px; }
+.panel-pad.tight { padding-bottom: 8px; }
+.panel h2 { font-size: var(--fs-lg); }
+.panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px 16px; padding: 16px 20px 10px; flex-wrap: wrap; }
+.panel-head h2, .panel-head h3 { margin: 0; font-size: 16px; font-weight: 620; letter-spacing: -.01em; }
+.panel-head .sub { margin: 2px 0 0; font-size: var(--fs-sm); color: var(--ink-3); }
+.panel-head .meta { margin-left: auto; }
+
+/* ---------- Valdikliai ---------- */
+.field { display: grid; gap: 6px; }
+.field label, legend { font-size: var(--fs-sm); color: var(--ink-2); font-weight: 550; }
+.field input, .field select, textarea {
+  width: 100%; height: 40px; border: 1px solid var(--field-line); border-radius: var(--r-ctl); padding: 0 12px; font: 450 15px var(--font);
+  background: var(--surface); color: var(--ink); box-shadow: inset 0 1px 2px rgb(20 23 28 / .05);
+  transition: border-color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out); }
+textarea { height: auto; min-height: 88px; padding: 10px 12px; line-height: 1.5; resize: vertical; }
+.field input:focus, .field select:focus, textarea:focus { outline: none; border-color: var(--accent-strong); box-shadow: var(--ring); }
+.field input::placeholder, textarea::placeholder { color: #6b737f; }
+.field input[aria-invalid="true"], .field select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--crit); box-shadow: 0 0 0 3px var(--crit-wash); }
+.field small { color: var(--ink-3); font-size: var(--fs-xs); }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+legend { margin-bottom: 6px; padding: 0; }
+.check input, .kind input { accent-color: var(--accent-strong); }
+
+/* Segmentuotas valdiklis */
+.seg { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; gap: 2px; background: var(--surface-3); border-radius: calc(var(--r-ctl) + 2px); box-shadow: inset 0 1px 2px rgb(20 23 28 / .06); }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.seg span { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); border-radius: var(--r-ctl); font-weight: 550; color: var(--ink-2); pointer-events: none;
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), box-shadow var(--t-fast) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .seg label:hover input:not(:checked) + span { color: var(--ink); background: rgb(253 253 254 / .5); } }
+.seg input:checked + span { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(20 23 28 / .12), 0 0 0 1px rgb(20 23 28 / .04); }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Filtro žymos */
+.filter { display: flex; gap: 6px; padding: 12px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r-chip); padding: 4px 11px; font: 500 13px var(--font); color: var(--ink-2); cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), transform var(--t-press) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .chip:hover { border-color: var(--field-line); color: var(--ink); } }
+.chip:active { transform: scale(.97); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--surface); }
+
+/* Žymos ir skaičiukai */
+.badge { font: 600 12px/1 var(--font); padding: 4px 6px; border-radius: var(--r-chip); background: var(--chrome-3); color: var(--chrome-ink); min-width: 22px; text-align: center; }
+.badge:empty { visibility: hidden; }
+.badges { display: inline-flex; gap: 4px; }
+.badges:empty { visibility: hidden; }
+.badge.err { background: var(--crit-wash); color: var(--crit); }
+.badge.warn { background: var(--warn-wash); color: var(--warn); }
+.badge.ok { background: var(--good-wash); color: var(--good); }
+.count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--accent-strong); color: #fff; font: 650 12px/20px var(--font); text-align: center; }
+.demo-tag { display: inline-flex; align-items: center; gap: 4px; font: 600 11.5px/1 var(--font); color: var(--warn); background: var(--warn-wash); border: 1px solid var(--warn-line); border-radius: var(--r-chip); padding: 4px 7px; vertical-align: 2px; white-space: nowrap; }
+.demo-tag .ph { font-size: 13px; }
+.side .demo-tag { background: rgb(252 243 217 / .1); border-color: rgb(235 213 146 / .3); color: #ebd592; }
+
+/* ---------- Lentelės ---------- */
+.table-wrap { overflow: auto; max-height: 560px; }
+table.data { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.data th { position: sticky; top: 0; z-index: 1; background: var(--surface); text-align: left; font-weight: 550; font-size: var(--fs-xs); color: var(--ink-3); padding: 10px 12px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+table.data td { padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data tbody tr:last-child td { border-bottom: 0; }
+table.data td.wrap { white-space: normal; min-width: 200px; }
+table.data tr.row-error td { background: var(--crit-wash); }
+table.data tr.row-warning td { background: var(--warn-wash); }
+@media (hover: hover) and (pointer: fine) { table.data tbody tr:hover td { background: var(--surface-2); } }
+
+/* ---------- Būsenos: tuščia, klaida, kraunasi ---------- */
+.boot { min-height: 100dvh; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--ink-3); }
+.spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { padding: 36px 20px; text-align: center; color: var(--ink-3); }
+.empty .ph { font-size: 28px; color: var(--line-strong); display: block; margin: 0 auto 8px; }
+.state { padding: 36px 20px; text-align: center; color: var(--ink-2); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--r-box); }
+.state .ph { font-size: 30px; color: var(--field-line); display: block; margin: 0 auto 10px; }
+.state b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+.state p { margin: 0 auto 14px; max-width: 44ch; font-size: var(--fs-md); }
+.state .btn .ph { font-size: 17px; display: inline; margin: 0; color: inherit; }
+.state.err { border-style: solid; border-color: var(--crit-line); background: var(--crit-wash); }
+.state.err .ph { color: var(--crit); }
+.skeleton, .sk { background: linear-gradient(90deg, var(--surface-2) 0%, var(--surface-3) 50%, var(--surface-2) 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; border-radius: 4px; }
+.skeleton { height: 14px; margin: 12px 18px; }
+.sk-card { height: 104px; border-radius: var(--r-box); }
+.sk-line { height: 14px; margin: 10px 0; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---------- Pranešimai ---------- */
+.toast { position: fixed; z-index: 60; bottom: 20px; right: 20px; display: flex; gap: 8px; align-items: center; background: var(--chrome); color: var(--chrome-ink-strong); padding: 11px 14px; border-radius: var(--r-ctl); font-size: var(--fs-md); box-shadow: var(--e2);
+  opacity: 0; transform: translateY(8px) scale(.98); transition: opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-out); pointer-events: none; max-width: min(420px, calc(100vw - 32px)); }
+.toast.on { opacity: 1; transform: none; }
+.toast.err { background: var(--crit); color: #fff; }
+.guard { display: flex; gap: 8px; align-items: center; font-size: var(--fs-md); padding: 10px 12px; border-radius: var(--r-ctl); margin: 10px 0; border: 1px solid transparent; }
+.guard.ok { background: var(--good-wash); color: var(--good); border-color: var(--good-line); }
+.guard.bad { background: var(--crit-wash); color: var(--crit); border-color: var(--crit-line); }
+
+/* ---------- Dialogas ---------- */
+dialog.confirm { border: 0; border-radius: var(--r-box); padding: 0; width: min(440px, calc(100% - 32px)); background: var(--surface); color: var(--ink); box-shadow: var(--e3); }
+dialog.confirm::backdrop { background: rgb(18 21 25 / .45); }
+dialog.confirm[open] { animation: dlg-in var(--t-base) var(--ease-out); }
+@keyframes dlg-in { from { opacity: 0; transform: scale(.96) translateY(4px); } to { opacity: 1; transform: none; } }
+dialog.confirm form { padding: 22px; display: grid; gap: 12px; }
+dialog.confirm h2 { margin: 0; font-size: 18px; }
+dialog.confirm p { margin: 0; color: var(--ink-2); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+
+/* Vaizdų perjungimas */
+.view { display: none; }
+.view.on { display: block; animation: view-in var(--t-base) var(--ease-out); }
+@keyframes view-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Telefonas: šoninė tampa viršumi, sistemos navigacija apačioje ---------- */
+@media (max-width: 959px) {
+  .frame { grid-template-columns: minmax(0, 1fr); }
+  .side { position: sticky; top: 0; z-index: 30; height: auto; overflow: visible; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0 8px; padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .side-brand { border: 0; margin: 0; padding: 4px 0; min-width: 0; }
+  .side-brand-txt small { display: none; }
+  .side .demo-tag { margin-left: 4px; }
+  .side-label, .side-co { display: none; }
+  .side-foot { margin: 0; padding: 0; border: 0; flex: none; }
+  .side-foot .who-name { display: none; }
+  .side .side-foot .btn { width: var(--tap); height: var(--tap); }
+  .side-note { display: none; }
+
+  /* Sistemos navigacija: apatinė juosta nykščiui */
+  .sysnav { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: var(--chrome); border-top: 1px solid var(--chrome-line); box-shadow: 0 -8px 24px rgb(18 21 25 / .18); }
+  .sysnav a { flex-direction: column; justify-content: center; gap: 3px; min-height: 54px; padding: 0 2px; font-size: 11.5px; text-align: center; line-height: 1.15; }
+  .sysnav a .ph { font-size: 22px; }
+  .sysnav-src { margin-top: 0; }
+  .with-bar .stage { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+  .with-bar .toast { left: 16px; right: 16px; max-width: none; bottom: calc(84px + env(safe-area-inset-bottom)); justify-content: center; }
+
+  /* Modulio navigacija: horizontali juosta po viršumi (eilė: ženklas, atsijungti, laikotarpis, žingsniai) */
+  .side-brand { order: 0; flex: 1 1 auto; }
+  .side-foot { order: 1; }
+  .side > .field { order: 2; flex-basis: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 4px 0 8px; }
+  .side > .field input { height: 38px; }
+  .side > .tabs, .side > .rail { order: 3; flex: 0 0 calc(100% + 24px); min-width: 0; margin: 6px -12px -8px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .side .tabs, .side .steps { display: flex; gap: 6px; overflow-x: auto; padding: 8px 12px; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .side .tabs::-webkit-scrollbar, .side .steps::-webkit-scrollbar { display: none; }
+  .side .tabs a, .side .steps button { flex: none; width: auto; min-height: 40px; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); gap: 8px; padding: 0 12px; font-size: 14px; white-space: nowrap; }
+  .side .steps li { flex: none; }
+  .side .steps button { display: flex; }
+  .side .tabs a .ph, .side .steps button .ph { color: var(--ink-3); font-size: 17px; }
+  .side .tabs a[aria-current="page"], .side .steps button[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--surface); box-shadow: none; }
+  .side .tabs a[aria-current="page"] .ph, .side .steps button[aria-current="page"] .ph { color: var(--accent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; animation-iteration-count: 1 !important; }
+  .spin { animation: spin 2.4s linear infinite !important; }
+}
+@media print { .side, .sysnav, .toast { display: none !important; } .frame { display: block; } .panel { box-shadow: none; } }

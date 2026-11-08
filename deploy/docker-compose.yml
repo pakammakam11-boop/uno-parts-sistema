@@ -1,0 +1,221 @@
+# UNO gamybinis paketas (Hostinger VPS, Ubuntu 24.04, Docker). Paleidimas: deploy/install.sh arba
+#   docker compose --env-file /opt/uno/.env -f /opt/uno/uno-apskaita/deploy/docker-compose.yml up -d --build
+# Katalogų išdėstymas VPS: /opt/uno/uno-apskaita (šis repo), /opt/uno/marsrutai (kolegos Maršrutų repo), /opt/uno/.env.
+# Išorėje atviri tik Caddy 80/443. App, Maršrutai ir Postgres pasiekiami tik per vidinį docker tinklą.
+
+x-logging: &logging
+  driver: json-file
+  options: {max-size: "10m", max-file: "5"}
+
+x-uno-env: &uno-env
+  # --- UNO (FastAPI) ---
+  UNO_DEMO: ${UNO_DEMO:-1}                    # 1: apskaitos skiltis /apskaita (čia gyvena Importuoti iš pašto)
+  UNO_DEMO_AUTH: ${UNO_DEMO_AUTH:-1}          # 1: demo maršrutai tik prisijungus
+  UNO_SECURE_COOKIE: "1"
+  UNO_DB: /data/uno.db
+  UNO_MAIL_DIR: /data/mail
+  UNO_MAIL_AI: ${UNO_MAIL_AI:-1}
+  UNO_SUPPLIERS_FILE: /data/suppliers.json
+  UNO_GAMA_DATA_DIR: /data/gama
+  UNO_GAMA_COMPANIES: ${UNO_GAMA_COMPANIES:-1}
+  UNO_GAMA_SNAPSHOT_CMD: ${UNO_GAMA_SNAPSHOT_CMD:-}
+  UNO_IMAP_USER: ${UNO_IMAP_USER:-}
+  UNO_IMAP_PASSWORD: ${UNO_IMAP_PASSWORD:-}
+  UNO_IMAP_HOST: ${UNO_IMAP_HOST:-imap.gmail.com}
+  UNO_IMAP_PORT: ${UNO_IMAP_PORT:-993}
+  UNO_IMAP_QUERY: ${UNO_IMAP_QUERY:-}
+  UNO_INVOICE_LINK_DOMAINS: ${UNO_INVOICE_LINK_DOMAINS:-agnum.lt}
+  LINKFETCH_URL: http://linkfetch:8099         # naršyklė tik atskirame `linkfetch` konteineryje (žr. DIEGIMAS_VPS.md)
+  LINKFETCH_TOKEN: ${LINKFETCH_TOKEN:?Nustatykite LINKFETCH_TOKEN (install.sh jį sugeneruoja)}
+  # --- AI laukų ištraukimas (vertex | anthropic | cli) ---
+  UNO_AI_PROVIDER: ${UNO_AI_PROVIDER:-vertex}
+  UNO_AI_MODEL: ${UNO_AI_MODEL:-}
+  UNO_AI_LOCATION: ${UNO_AI_LOCATION:-}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  GOOGLE_SA_KEY_B64: ${GOOGLE_SA_KEY_B64:-}
+  GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+  # --- Personalas (HR) ir apžvalga ---
+  HR_DATABASE_URL: postgresql://uno:${POSTGRES_PASSWORD:?Nustatykite POSTGRES_PASSWORD}@postgres:5432/uno
+  HR_DEMO: ${HR_DEMO:-0}
+  HR_BASE_URL: https://${DOMAIN:?Nustatykite DOMAIN}
+  HR_SECURE_COOKIE: "1"
+  HR_POSTBACK_SECRET: ${HR_POSTBACK_SECRET:-}
+  HR_SIGNING: ${HR_SIGNING:-demo}
+  HR_MAIL_FROM: ${HR_MAIL_FROM:-Demo įmonė <onboarding@resend.dev>}
+  HR_MAIL_ALLOWLIST: ${HR_MAIL_ALLOWLIST:-}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+
+services:
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?Nustatykite DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Nustatykite ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+      marsrutai:
+        condition: service_healthy
+    logging: *logging
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.app
+    image: uno-app:local
+    restart: unless-stopped
+    environment: *uno-env
+    expose: ["8000"]
+    volumes:
+      - uno_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 1g
+    networks: [default, fetchnet]   # fetchnet: tik app + worker + linkfetch
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    tmpfs: ["/tmp"]
+    logging: *logging
+
+  worker:
+    image: uno-app:local
+    restart: unless-stopped
+    command: ["python", "-m", "tools.mail_poll", "--loop", "--interval-minutes", "${MAIL_POLL_MINUTES:-15}"]
+    environment:
+      <<: *uno-env
+      MAIL_POLL_MINUTES: ${MAIL_POLL_MINUTES:-15}
+    volumes:
+      - uno_data:/data
+    healthcheck:
+      test: ["CMD", "python", "-m", "tools.mail_poll", "--healthcheck"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    depends_on:
+      app:
+        condition: service_healthy
+      linkfetch:
+        condition: service_healthy
+    mem_limit: 1g
+    networks: [default, fetchnet]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    tmpfs: ["/tmp"]
+    logging: *logging
+
+  # Vienintelė vieta su Chromium. Be paslapčių (tik LINKFETCH_TOKEN), be DB / IMAP / Google. Tinklai: egress (internetas)
+  # ir fetchnet (vidinis, tik app + worker). Watchdog `os._exit(70)` -> konteineris sustoja -> Docker paleidžia iš naujo ->
+  # žūsta visi Chromium palikuonys. RAM / PID / CPU ribojami cgroup.
+  linkfetch:
+    image: uno-app:local
+    restart: unless-stopped
+    command: ["python", "-m", "tools.linkfetch_server"]
+    user: uno
+    environment:
+      LINKFETCH_TOKEN: ${LINKFETCH_TOKEN:?Nustatykite LINKFETCH_TOKEN (install.sh jį sugeneruoja)}
+      UNO_INVOICE_LINK_DOMAINS: ${UNO_INVOICE_LINK_DOMAINS:-agnum.lt}
+      HOME: /tmp
+    networks: [egress, fetchnet]
+    read_only: true
+    tmpfs: ["/tmp:size=256m"]
+    mem_limit: 768m
+    pids_limit: 256
+    cpus: 1.0
+    init: true
+    # seccomp: Playwright profilis leidžia Chromium smėlio dėžei (user namespaces) be SYS_ADMIN
+    security_opt: ["no-new-privileges:true", "seccomp=./chromium-seccomp.json"]
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8099/healthz', timeout=4).status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging: *logging
+
+  marsrutai:
+    build:
+      context: ${MARSRUTAI_DIR:-../../marsrutai}
+      dockerfile: ../uno-apskaita/deploy/Dockerfile.marsrutai
+    image: uno-marsrutai:local
+    restart: unless-stopped
+    environment:
+      PORT: "8787"
+      MARSRUTAI_BASE: /marsrutai/
+      DATABASE_URL: postgresql://uno:${POSTGRES_PASSWORD:?Nustatykite POSTGRES_PASSWORD}@postgres:5432/marsrutai
+      GOOGLE_SA_KEY_B64: ${GOOGLE_SA_KEY_B64:-}
+      GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
+      MARSRUTAI_API_TIMEOUT_MS: ${MARSRUTAI_API_TIMEOUT_MS:-120000}
+      MARSRUTAI_ROAD_GEOMETRY: ${MARSRUTAI_ROAD_GEOMETRY:-on}
+    expose: ["8787"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 1g
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    tmpfs: ["/tmp"]
+    logging: *logging
+
+  postgres:
+    image: postgres:16.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: uno
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Nustatykite POSTGRES_PASSWORD}
+      POSTGRES_DB: uno
+    command: ["postgres", "-c", "shared_buffers=512MB", "-c", "max_connections=60"]
+    expose: ["5432"]            # ne ports: iš išorės nepasiekiama
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init-marsrutai-db.sh:/docker-entrypoint-initdb.d/10-marsrutai-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uno -d uno"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 1536m
+    logging: *logging
+
+  backup:
+    build:
+      context: ./backup
+      dockerfile: Dockerfile
+    image: uno-backup:local
+    restart: unless-stopped
+    environment:
+      PGHOST: postgres
+      PGUSER: uno
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Nustatykite POSTGRES_PASSWORD}
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+    volumes:
+      - uno_data:/data
+      - ${BACKUP_DIR:-/opt/uno/backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 256m
+    logging: *logging
+
+networks:
+  egress: {}             # tik linkfetch: išėjimas į internetą, nėra kitų konteinerių
+  fetchnet:
+    internal: true       # app + worker <-> linkfetch, be interneto
+
+volumes:
+  uno_data:
+  pg_data:
+  caddy_data:
+  caddy_config:

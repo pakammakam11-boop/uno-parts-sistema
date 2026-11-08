@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121519">
+<link rel="manifest" href="/static/pwa/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/pwa/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="UNO">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>UNO Parts DU kontrolė</title>
+<link rel="stylesheet" href="/static/icons/style.css">
+<link rel="stylesheet" href="/static/ds.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/prod.css">
+</head>
+<body>
+<!-- Prisijungimas -->
+<main class="login" id="login-view" hidden>
+  <form class="panel panel-pad login-card" id="login-form" novalidate>
+    <span class="mark" aria-hidden="true">UNO</span>
+    <h1>UNO Parts DU kontrolė</h1>
+    <p class="lede">Prisijunkite buhalterės ar administratoriaus paskyra.</p>
+    <div class="field"><label for="login-user">Naudotojo vardas</label>
+      <input id="login-user" name="username" autocomplete="username" required></div>
+    <div class="field"><label for="login-pass">Slaptažodis</label>
+      <input id="login-pass" name="password" type="password" autocomplete="current-password" required></div>
+    <p class="form-error" id="login-error" role="alert"></p>
+    <button class="btn primary" type="submit"><i class="ph ph-sign-in"></i>Prisijungti</button>
+  </form>
+</main>
+
+<div class="frame" id="app-view" hidden>
+  <aside class="side" aria-label="UNO Parts DU kontrolė">
+    <div class="side-brand"><span class="mark" aria-hidden="true">UNO</span><span class="side-brand-txt"><b>DU kontrolė</b><small id="who"></small></span></div>
+    <div class="field period-field">
+      <label for="period">Laikotarpis</label>
+      <input id="period" type="month">
+    </div>
+    <nav class="rail" aria-label="DU kontrolės žingsniai">
+    <ul class="steps">
+      <li><button data-view="files" aria-current="page"><i class="ph ph-upload-simple"></i>1. Failai<span class="badge" data-badge="files"></span></button></li>
+      <li><button data-view="check"><i class="ph ph-magnifying-glass"></i>2. Patikra<span class="badge" data-badge="check"></span></button></li>
+      <li><button data-view="approve"><i class="ph ph-seal-check"></i>3. Patvirtinimas<span class="badge" data-badge="approve"></span></button></li>
+      <li><button data-view="compare"><i class="ph ph-scales"></i>4. DU palyginimas<span class="badge" data-badge="compare"></span></button></li>
+      <li><button data-view="gama"><i class="ph ph-database"></i>GAMA patikra<span class="badge" data-badge="gama"></span></button></li>
+      <li><button data-view="audit"><i class="ph ph-clock-counter-clockwise"></i>Žurnalas<span class="badge" data-badge="audit"></span></button></li>
+    </ul>
+    </nav>
+    <div class="side-foot"><span class="who-name"><b>UNO Parts</b><small>Darbo užmokesčio patikra</small></span><button class="btn small" id="logout" aria-label="Atsijungti" title="Atsijungti"><i class="ph ph-sign-out"></i></button></div>
+  </aside>
+
+  <div class="stage">
+  <main class="page">
+    <section class="view on" id="view-files">
+      <div class="head"><div><h1>Mėnesio failai</h1>
+        <p class="lede">Įkelkite darbuotojų sąrašą ir tabelį. Kiti failai neprivalomi, bet be jų dalis patikrų praleidžiama.</p></div></div>
+      <div class="panel"><ul class="uploads" id="uploads"></ul></div>
+    </section>
+
+    <section class="view" id="view-check">
+      <div class="head"><div><h1>Tabelio ir DU patikra</h1>
+        <p class="lede">Tabelis sutikrinamas su Rivile, Sodros pažymomis ir prašymais. Palaikomiems atvejams paskaičiuojamas laukiamas DU.</p></div>
+        <div class="actions"><button class="btn primary" id="run-check"><i class="ph ph-play"></i>Tikrinti</button></div></div>
+      <div class="guard bad" id="check-stale" role="status" hidden></div>
+      <div class="panel kpis" id="check-kpis"></div>
+      <div class="grid-2" style="margin-top:20px">
+        <div class="panel"><div class="panel-pad" style="padding-bottom:0"><h2>Radiniai</h2></div><div id="check-findings"></div></div>
+        <div class="stack">
+          <div class="panel"><div class="panel-pad" style="padding-bottom:8px"><h2>Buhalterės patikrai</h2></div><div id="check-unsupported"></div></div>
+          <div class="panel"><div class="panel-pad" style="padding-bottom:8px"><h2>Laukiamas DU</h2></div><div class="table-wrap" id="check-expected"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-approve">
+      <div class="head"><div><h1>Patvirtinimas ir Rivilės tabelis</h1>
+        <p class="lede">Patvirtinus patikrą, galima atsisiųsti tabelio importo failą Rivilei. Jei yra viršvalandžių, jie pateikiami atskirame faile rankiniam suvedimui. Pasikeitus bet kuriam failui, patvirtinimas nebegalioja.</p></div></div>
+      <div class="panel panel-pad approve-card">
+        <div id="approve-status"></div>
+        <div class="actions">
+          <button class="btn primary" id="approve-btn"><i class="ph ph-seal-check"></i>Patvirtinti patikrą</button>
+          <button class="btn" id="download-rivile"><i class="ph ph-file-arrow-down"></i>Atsisiųsti Rivilės tabelį</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="view" id="view-compare">
+      <div class="head"><div><h1>Rivilės DU palyginimas</h1>
+        <p class="lede">Įkelkite DU žiniaraštį iš Rivilės. Palyginsime su mūsų skaičiavimu palaikomiems atvejams ir paruošime GPM313, SAM sumas.</p></div>
+        <div class="actions"><button class="btn primary" id="run-compare"><i class="ph ph-scales"></i>Palyginti</button></div></div>
+      <div class="guard bad" id="compare-stale" role="status" hidden></div>
+      <div class="panel totals" id="compare-totals"></div>
+      <div class="grid-2" style="margin-top:20px">
+        <div class="panel"><div class="panel-pad" style="padding-bottom:0"><h2>Skirtumai</h2></div><div id="compare-findings"></div></div>
+        <div class="panel"><div class="panel-pad" style="padding-bottom:8px"><h2>Nelyginta, tikrina buhalterė</h2></div><div id="compare-review"></div></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-gama">
+      <div class="head"><div><h1>GAMA DU patikra</h1>
+        <p class="lede">Patikriname, ar Rivilė GAMA teisingai priskaičiavo algą, viršvalandžius ir priedus pagal tabelį ir išskaičiavo PSD, VSD, pensijų kaupimą ir GPM. Duomenys GAMA tik skaitomi, nieko nekeičiame.</p></div></div>
+      <form class="panel panel-pad gama-form" id="gama-form" novalidate>
+        <div class="field"><label for="gama-month">Mėnuo</label><input id="gama-month" type="month" required></div>
+        <label class="check"><input type="checkbox" id="gama-refresh" checked>
+          <span>Atnaujinti iš GAMA<small>Išjungus, naudojami paskutinį kartą parsiųsti duomenys</small></span></label>
+        <div class="actions"><button class="btn primary" type="submit" id="gama-run"><i class="ph ph-play"></i>Tikrinti mėnesį GAMA</button></div>
+        <p class="gama-progress" id="gama-progress" role="status" aria-live="polite"></p>
+      </form>
+      <div class="guard bad" id="gama-error" role="alert" hidden></div>
+      <div id="gama-result" hidden>
+        <div class="gama-result-head">
+          <h2 id="gama-result-title" tabindex="-1"></h2>
+          <button class="btn" type="button" id="gama-xlsx"><i class="ph ph-file-xls"></i>Atsisiųsti XLSX</button>
+        </div>
+        <div class="panel kpis" id="gama-kpis"></div>
+        <div class="panel totals" id="gama-components" style="margin-top:12px"></div>
+        <div class="panel" style="margin-top:20px">
+          <div class="panel-pad" style="padding-bottom:0"><h2>Radiniai</h2></div>
+          <div id="gama-findings"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-pad" style="padding-bottom:8px"><h2>Ankstesnės patikros</h2></div>
+        <div class="table-wrap" id="gama-runs"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-audit">
+      <div class="head"><div><h1>Veiksmų žurnalas</h1>
+        <p class="lede">Visų laikotarpių veiksmai: kas ir kada įkėlė, tikrino, patvirtino ar atsisiuntė.</p></div></div>
+      <div class="panel"><div class="table-wrap" id="audit"></div></div>
+    </section>
+  </main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/static/prod.js"></script>
+</body>
+</html>

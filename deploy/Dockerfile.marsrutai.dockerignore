@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env*
+.vercel
+.playwright-mcp
+**/node_modules
+node_modules
+packages/dashboard/dist
+out
+api
+data/scenarios
+*.log
+*.md

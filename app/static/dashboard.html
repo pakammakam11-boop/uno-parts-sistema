@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121519">
+<link rel="manifest" href="/static/pwa/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/pwa/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="UNO">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Apžvalga</title>
+<link rel="stylesheet" href="/static/icons/style.css">
+<link rel="stylesheet" href="/static/ds.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/prod.css">
+<link rel="stylesheet" href="/static/hr.css">
+<link rel="stylesheet" href="/static/dashboard.css">
+<script type="module" src="/static/dashboard.js"></script>
+</head>
+<body class="hr dash with-bar">
+
+<div class="boot" id="boot" role="status" aria-live="polite"><i class="ph ph-circle-notch spin" aria-hidden="true"></i><span>Kraunama</span></div>
+
+<!-- ============ Prisijungimas (HR sesija) ============ -->
+<main class="hr-login" id="login-view" hidden>
+  <div class="login-col">
+    <header class="login-head">
+      <span class="mark" aria-hidden="true">UNO</span>
+      <h1>Verslo apžvalga</h1>
+      <p class="lede">Pardavimai, kaštai, pelnas ir darbai vienoje vietoje. <span class="demo-tag"><i class="ph ph-flask" aria-hidden="true"></i>Demo</span></p>
+    </header>
+    <section class="panel" aria-labelledby="personas-title">
+      <div class="panel-pad tight"><h2 id="personas-title">Prisijungti kaip…</h2>
+        <p class="hint">Apžvalgą mato direktorius ir buhalterė. Kiti darbuotojai pateks į personalo prašymus.</p></div>
+      <div id="personas"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ============ Apžvalga ============ -->
+<div id="app-view" class="frame" hidden>
+  <aside class="side" aria-label="UNO Parts">
+    <a class="side-brand" href="/"><span class="mark" aria-hidden="true">UNO</span><span class="side-brand-txt"><b>UNO Parts</b><small>Verslo sistema</small></span><span class="demo-tag" title="Demonstracinė versija, duomenys išgalvoti"><i class="ph ph-flask" aria-hidden="true"></i>Demo</span></a>
+    <nav class="sysnav app-nav" aria-label="Sistema">
+      <a href="/" aria-current="page" data-testid="nav-overview"><i class="ph ph-squares-four" aria-hidden="true"></i><span>Apžvalga</span></a>
+      <a href="/hr" data-testid="nav-hr"><i class="ph ph-users" aria-hidden="true"></i><span>Personalas</span></a>
+      <a href="/marsrutai" data-testid="nav-routes"><i class="ph ph-truck" aria-hidden="true"></i><span>Maršrutai</span></a>
+      <a href="/apskaita" data-testid="nav-accounting"><i class="ph ph-calculator" aria-hidden="true"></i><span>Apskaita</span></a>
+      <a href="/#saltiniai" class="sysnav-src" data-testid="nav-sources"><i class="ph ph-plugs" aria-hidden="true"></i><span>Šaltiniai</span></a>
+    </nav>
+    <div class="side-foot who">
+      <span class="who-name"><b id="who-name"></b><small id="who-role"></small></span>
+      <button class="btn ghost" id="logout" type="button" aria-label="Atsijungti" title="Atsijungti"><i class="ph ph-sign-out" aria-hidden="true"></i></button>
+    </div>
+  </aside>
+
+  <div class="stage">
+  <main class="dash-main dash-wide" id="main" tabindex="-1">
+    <!-- Filtrai -->
+    <div class="dash-head">
+      <div class="dash-title">
+        <h1>Apžvalga</h1>
+        <p class="lede" id="range-line" data-testid="range-line">&nbsp;</p>
+      </div>
+      <div class="filters" role="group" aria-label="Filtrai">
+        <div class="seg seg-4" role="radiogroup" aria-label="Laikotarpis" id="period">
+          <label><input type="radio" name="period" value="day" data-testid="period-day"><span>Šiandien</span></label>
+          <label><input type="radio" name="period" value="week" data-testid="period-week"><span>Savaitė</span></label>
+          <label><input type="radio" name="period" value="month" data-testid="period-month" checked><span>Mėnuo</span></label>
+          <label><input type="radio" name="period" value="quarter" data-testid="period-quarter"><span>Ketvirtis</span></label>
+        </div>
+        <div class="seg seg-3" role="radiogroup" aria-label="Filialas" id="branch">
+          <label><input type="radio" name="branch" value="all" data-testid="branch-all" checked><span>Visi</span></label>
+          <label><input type="radio" name="branch" value="vln" data-testid="branch-vln"><span>Vilnius</span></label>
+          <label><input type="radio" name="branch" value="kns" data-testid="branch-kns"><span>Kaunas</span></label>
+        </div>
+      </div>
+    </div>
+
+    <nav class="jump" aria-label="Skiltys">
+      <a href="#finansai">Finansai</a><a href="#efektyvumas">Efektyvumas</a><a href="#darbai">Darbai ir paštas</a><a href="#operacijos">Operacijos</a><a href="#saltiniai">Duomenų šaltiniai</a>
+    </nav>
+
+    <!-- KPI juosta -->
+    <section class="panel kpi-strip" aria-label="Pagrindiniai rodikliai" id="kpis" data-testid="kpis" aria-busy="true"></section>
+
+    <!-- Veiksmų eilė -->
+    <section class="panel actions-panel" aria-labelledby="actions-title" id="veiksmai">
+      <div class="panel-head"><h2 id="actions-title">Šiandien reikia tavo sprendimo</h2><span class="meta" id="actions-meta"></span></div>
+      <ol class="actions-list" id="actions" data-testid="actions"></ol>
+    </section>
+
+    <!-- Finansai -->
+    <section class="dash-section" id="finansai" aria-labelledby="fin-title">
+      <h2 class="section-title" id="fin-title">Finansai</h2>
+      <div class="fin-grid">
+        <article class="panel costs-panel" id="kastai" aria-labelledby="costs-title" data-testid="costs">
+          <div class="panel-head">
+            <div><h3 id="costs-title">Kaštai pagal grupes</h3><p class="sub" id="costs-sub"></p></div>
+            <span class="meta" id="costs-meta"></span>
+          </div>
+          <nav class="crumbs" id="costs-crumbs" aria-label="Kaštų lygis" hidden></nav>
+          <div id="costs-body" aria-live="polite"></div>
+          <p class="costs-note" id="costs-note" data-testid="costs-note" hidden></p>
+        </article>
+        <div class="fin-side">
+          <article class="panel" aria-labelledby="sales-title" data-testid="sales-chart">
+            <div class="panel-head"><div><h3 id="sales-title">Pardavimai ir pelnas per dieną</h3><p class="sub" id="sales-sub"></p></div><span class="meta" id="sales-meta"></span></div>
+            <div class="chart" id="sales-chart"></div>
+          </article>
+          <article class="panel" aria-labelledby="budget-title" data-testid="budget">
+            <div class="panel-head"><div><h3 id="budget-title">Biudžetas ir faktas pagal filialą</h3><p class="sub" id="budget-sub"></p></div><span class="meta" id="budget-meta"></span></div>
+            <div id="budget-body"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Efektyvumas -->
+    <section class="dash-section" id="efektyvumas" aria-labelledby="eff-title">
+      <h2 class="section-title" id="eff-title">Efektyvumas</h2>
+      <article class="panel eff-figs" id="eff-figs" data-testid="eff-figs"></article>
+      <div class="eff-grid">
+        <article class="panel" aria-labelledby="emp-title" data-testid="employees">
+          <div class="panel-head"><div><h3 id="emp-title">Darbuotojų reitingas</h3><p class="sub">Rikiuokite pagal stulpelį</p></div><span class="meta" id="emp-meta"></span></div>
+          <div class="table-wrap sticky-first"><table class="data rank" id="emp-table"></table></div>
+        </article>
+        <article class="panel" aria-labelledby="man-title" data-testid="manufacturers">
+          <div class="panel-head"><div><h3 id="man-title">Marža pagal gamintoją</h3></div><span class="meta" id="man-meta"></span></div>
+          <div class="table-wrap sticky-first"><table class="data" id="man-table"></table></div>
+        </article>
+      </div>
+      <article class="panel" aria-labelledby="br-title" data-testid="branches">
+        <div class="panel-head"><div><h3 id="br-title">Filialų palyginimas</h3></div><span class="meta" id="br-meta"></span></div>
+        <div class="multiples" id="br-body"></div>
+      </article>
+    </section>
+
+    <!-- Darbai ir paštas -->
+    <section class="dash-section" id="darbai" aria-labelledby="work-title">
+      <h2 class="section-title" id="work-title">Darbai ir paštas</h2>
+      <div class="work-grid">
+        <article class="panel" aria-labelledby="mail-title" data-testid="emails">
+          <div class="panel-head"><div><h3 id="mail-title">Neatsakyti laiškai</h3></div><span class="meta" id="mail-meta"></span></div>
+          <div class="filter" role="group" aria-label="Prioritetas" id="mail-filter">
+            <button class="chip" type="button" data-prio="all" aria-pressed="true" data-testid="prio-all">Visi</button>
+            <button class="chip" type="button" data-prio="high" aria-pressed="false" data-testid="prio-high">Aukštas</button>
+            <button class="chip" type="button" data-prio="normal" aria-pressed="false" data-testid="prio-normal">Vidutinis</button>
+            <button class="chip" type="button" data-prio="low" aria-pressed="false" data-testid="prio-low">Žemas</button>
+          </div>
+          <ul class="mail-rows" id="mail-list"></ul>
+        </article>
+        <article class="panel" aria-labelledby="task-title" data-testid="tasks">
+          <div class="panel-head"><div><h3 id="task-title">Užduotys</h3></div><span class="meta" id="task-meta"></span></div>
+          <ul class="task-rows" id="task-list"></ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- Operacijos -->
+    <section class="dash-section" id="operacijos" aria-labelledby="ops-title">
+      <h2 class="section-title" id="ops-title">Operacijos</h2>
+      <article class="panel ops" id="ops-body" data-testid="operations"></article>
+    </section>
+
+    <!-- Šaltiniai -->
+    <section class="dash-section" id="saltiniai" aria-labelledby="src-title">
+      <h2 class="section-title" id="src-title">Duomenų šaltiniai</h2>
+      <article class="panel" data-testid="sources">
+        <div class="panel-head"><div><p class="sub">Kas jau prijungta ir ką reikia atrakinti, kad demo duomenis pakeistų tikri.</p></div><span class="meta" id="src-meta"></span></div>
+        <ul class="src-rows" id="src-list"></ul>
+      </article>
+    </section>
+  </main>
+  </div>
+</div>
+
+<div class="chart-tip" id="chart-tip" role="tooltip" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

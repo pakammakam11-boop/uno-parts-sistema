@@ -1,0 +1,22 @@
+UNO Parts sąskaitų importas į Rivilę
+====================================
+
+Šis aplankas pildomas automatiškai kas minutę (suplanuota užduotis
+„UNO Parts saskaitu importas“). Čia patenka tik UAB Uno parts sąskaitos,
+kiekviena vieną kartą.
+
+IMPORTUI\     Nauji importo failai (.eip) Rivilei.
+              Rivilė GAMA: Pirkimai -> Pirkimo dokumentai -> Importas -> Išorinis importas.
+              Jei Rivilėje įjungtas aplanko importas (SS_IMP_CIKL), nurodykite šį aplanką.
+
+ARCHYVAS\     Suimportavus failą perkelkite jį čia, kad IMPORTUI liktų tik nauji.
+
+PDF\          Sąskaitų originalai pagal mėnesį (pvz. PDF\2026-11).
+              Failo vardas: <atsisiuntimo data>_<sąskaitos numeris>.pdf
+
+LOGAI\        log.txt: kiekvieno paleidimo laikas ir rezultatas (OK arba KLAIDA).
+
+SISTEMA\      Skriptai ir prieigos raktas. Nekeisti.
+              SISTEMA\uno_import.bat            paleisti ranka vieną kartą
+              SISTEMA\uno_import.bat install    įjungti užduotį kas minutę
+              SISTEMA\uno_import.bat uninstall  išjungti užduotį

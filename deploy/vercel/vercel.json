@@ -1,0 +1,28 @@
+{
+  "regions": [
+    "fra1"
+  ],
+  "rewrites": [
+    {
+      "source": "/marsrutai/",
+      "destination": "https://uno-marsrutai.vercel.app/marsrutai/"
+    },
+    {
+      "source": "/marsrutai",
+      "destination": "https://uno-marsrutai.vercel.app/marsrutai/"
+    },
+    {
+      "source": "/marsrutai/:path+",
+      "destination": "https://uno-marsrutai.vercel.app/marsrutai/:path+"
+    },
+    {
+      "source": "/out/:path+",
+      "destination": "https://uno-marsrutai.vercel.app/out/:path+"
+    }
+  ],
+  "functions": {
+    "index.py": {
+      "maxDuration": 300
+    }
+  }
+}

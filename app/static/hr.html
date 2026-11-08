@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121519">
+<link rel="manifest" href="/static/pwa/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/pwa/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="UNO">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>Personalo prašymai</title>
+<link rel="stylesheet" href="/static/icons/style.css">
+<link rel="stylesheet" href="/static/ds.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/prod.css">
+<link rel="stylesheet" href="/static/hr.css">
+</head>
+<body class="hr with-bar">
+
+<!-- Kraunasi: kol nežinome, ar sesija gyva -->
+<div class="boot" id="boot" role="status" aria-live="polite"><i class="ph ph-circle-notch spin" aria-hidden="true"></i><span>Kraunama</span></div>
+
+<!-- ============ Prisijungimas ============ -->
+<main class="hr-login" id="login-view" hidden>
+  <div class="login-col">
+    <header class="login-head">
+      <span class="mark" aria-hidden="true">UNO</span>
+      <h1>Personalo prašymai</h1>
+      <p class="lede">Atostogų ir komandiruočių prašymai, pasirašomi telefonu. <span class="demo-tag"><i class="ph ph-flask" aria-hidden="true"></i>Demo</span></p>
+    </header>
+
+    <section class="panel" id="personas-panel" aria-labelledby="personas-title" hidden>
+      <div class="panel-pad tight"><h2 id="personas-title">Prisijungti kaip…</h2>
+        <p class="hint">Demo režimas: pasirinkite žmogų ir matysite sistemą jo akimis. Kitą galite pasirinkti atsijungę.</p></div>
+      <div id="personas"></div>
+    </section>
+
+    <form class="panel panel-pad magic" id="magic-form" novalidate>
+      <h2>Prisijungti el. paštu</h2>
+      <div class="field">
+        <label for="magic-email">Darbo el. paštas</label>
+        <input id="magic-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="vardas@demo.uno.lt" aria-describedby="magic-msg">
+      </div>
+      <p class="field-msg" id="magic-msg" role="alert"></p>
+      <button class="btn primary block" type="submit"><i class="ph ph-envelope-simple" aria-hidden="true"></i>Siųsti nuorodą</button>
+      <p class="hint">Nuoroda galioja 30 min. ir tinka vienam prisijungimui. Demo laiškai nesiunčiami, jie patenka į „Pašto dėžutę (demo)“.</p>
+    </form>
+  </div>
+</main>
+
+<!-- ============ Programa ============ -->
+<div class="hr-app frame" id="app-view" hidden>
+  <aside class="side" aria-label="UNO Parts">
+    <a class="side-brand brand-hr" href="/"><span class="mark" aria-hidden="true">UNO</span><span class="side-brand-txt"><b>UNO Parts</b><small>Personalo prašymai</small></span><span class="demo-tag" title="Demonstracinė versija, duomenys išgalvoti"><i class="ph ph-flask" aria-hidden="true"></i>Demo</span></a>
+    <nav class="sysnav" aria-label="Sistema">
+      <a href="/" data-testid="nav-overview"><i class="ph ph-squares-four" aria-hidden="true"></i><span>Apžvalga</span></a>
+      <a href="/hr" aria-current="page" data-testid="nav-hr"><i class="ph ph-users" aria-hidden="true"></i><span>Personalas</span></a>
+      <a href="/marsrutai" data-testid="nav-routes"><i class="ph ph-truck" aria-hidden="true"></i><span>Maršrutai</span></a>
+      <a href="/apskaita" data-testid="nav-accounting"><i class="ph ph-calculator" aria-hidden="true"></i><span>Apskaita</span></a>
+      <a href="/#saltiniai" class="sysnav-src" data-testid="nav-sources"><i class="ph ph-plugs" aria-hidden="true"></i><span>Šaltiniai</span></a>
+    </nav>
+    <p class="side-label" id="hr-nav-label">Personalas</p>
+    <nav class="tabs" aria-labelledby="hr-nav-label">
+      <a href="#/mine" data-tab="mine"><i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Mano prašymai</span></a>
+      <a href="#/to-sign" data-tab="to-sign"><i class="ph ph-signature" aria-hidden="true"></i><span>Laukia parašo</span><b class="count" id="sign-count" hidden></b></a>
+      <a href="#/timesheet" data-tab="timesheet" data-need="timesheet" hidden><i class="ph ph-table" aria-hidden="true"></i><span>Tabelis</span></a>
+      <a href="#/outbox" data-tab="outbox"><i class="ph ph-tray" aria-hidden="true"></i><span>Pašto dėžutė</span></a>
+    </nav>
+    <span class="sr-only" role="status" aria-atomic="true" id="sign-count-sr"></span>
+    <div class="side-foot who">
+      <span class="who-name"><b id="who-name"></b><small id="who-role"></small></span>
+      <button class="btn ghost" id="logout" type="button" aria-label="Atsijungti" title="Atsijungti"><i class="ph ph-sign-out" aria-hidden="true"></i></button>
+    </div>
+  </aside>
+
+  <div class="stage">
+  <main class="hr-main" id="main" tabindex="-1">
+
+    <!-- Mano prašymai -->
+    <section class="view" id="view-mine" aria-labelledby="mine-title">
+      <div class="mine-head">
+        <div>
+          <h1 id="mine-title">Mano prašymai</h1>
+          <p class="lede" id="mine-lede">Pateikite prašymą ir sekite, kas jau pasirašė.</p>
+        </div>
+        <a class="btn primary" href="#/new" id="new-btn"><i class="ph ph-plus" aria-hidden="true"></i>Naujas prašymas</a>
+      </div>
+      <div class="balance panel" id="balance" data-testid="balance-panel">
+        <span class="balance-label">Kasmetinių atostogų likutis</span>
+        <b class="balance-val" data-testid="balance" id="balance-val"></b>
+        <span class="balance-note">Likutis sumažėja, kai prašymą pasirašo visi.</span>
+      </div>
+      <div class="scope" id="scope" role="group" aria-label="Kieno prašymai" hidden>
+        <button type="button" class="chip" data-scope="mine" aria-pressed="true">Mano</button>
+        <button type="button" class="chip" data-scope="team" aria-pressed="false" data-need="manager">Komandos</button>
+        <button type="button" class="chip" data-scope="all" aria-pressed="false" data-need="hr">Visi</button>
+      </div>
+      <div id="mine-list" class="req-list" aria-live="polite"></div>
+    </section>
+
+    <!-- Laukia mano parašo -->
+    <section class="view" id="view-to-sign" aria-labelledby="sign-title">
+      <h1 id="sign-title">Laukia mano parašo</h1>
+      <p class="lede">Dokumentai, kuriuos dabar turite pasirašyti jūs. Eilė eina iš eilės: darbuotojas, pavaduojantis, vadovas.</p>
+      <div id="to-sign-list" class="req-list" aria-live="polite"></div>
+    </section>
+
+    <!-- Naujas prašymas -->
+    <section class="view" id="view-new" aria-labelledby="new-title">
+      <a class="back" href="#/mine"><i class="ph ph-arrow-left" aria-hidden="true"></i>Mano prašymai</a>
+      <h1 id="new-title">Naujas prašymas</h1>
+      <form class="panel panel-pad req-form" id="req-form" novalidate>
+        <div class="form-error" id="form-error" role="alert" tabindex="-1" hidden></div>
+
+        <fieldset class="seg-field">
+          <legend>Prašymo tipas</legend>
+          <div class="seg">
+            <label><input type="radio" name="type" value="leave" checked><span><i class="ph ph-calendar-check" aria-hidden="true"></i>Atostogos</span></label>
+            <label><input type="radio" name="type" value="trip"><span><i class="ph ph-airplane-tilt" aria-hidden="true"></i>Komandiruotė</span></label>
+          </div>
+        </fieldset>
+
+        <fieldset class="kinds" id="kind-field">
+          <legend>Atostogų rūšis</legend>
+          <label class="kind"><input type="radio" name="leave_kind" value="annual" checked><span><b>Kasmetinės</b><small>Mažina likutį, tabelyje A</small></span></label>
+          <label class="kind"><input type="radio" name="leave_kind" value="unpaid"><span><b>Nemokamos</b><small>Likučio nemažina, tabelyje NA</small></span></label>
+          <label class="kind"><input type="radio" name="leave_kind" value="study"><span><b>Mokymosi</b><small>Likučio nemažina, tabelyje MA</small></span></label>
+        </fieldset>
+        <p class="inline-balance" id="form-balance"></p>
+
+        <div class="dates">
+          <div class="field"><label for="date-from">Nuo</label><input id="date-from" name="date_from" type="date" required></div>
+          <div class="field"><label for="date-to">Iki (imtinai)</label><input id="date-to" name="date_to" type="date" required aria-describedby="dates-msg"></div>
+        </div>
+        <p class="workdays" id="dates-msg" role="status" aria-live="polite"><span class="muted">Pasirinkite datas, suskaičiuosime darbo dienas.</span></p>
+
+        <div class="field">
+          <label for="substitute">Pavaduojantis kolega</label>
+          <select id="substitute" name="substitute_id" required aria-describedby="sub-hint"><option value="">Kraunama…</option></select>
+          <small id="sub-hint">Jis pasirašys antras ir taip sutiks jus pavaduoti.</small>
+        </div>
+
+        <div class="trip-fields" id="trip-fields" hidden>
+          <div class="field"><label for="destination">Kur vykstate</label><input id="destination" name="destination" maxlength="200" autocomplete="off" placeholder="Pvz. Ryga, tiekėjo sandėlis"></div>
+          <div class="field"><label for="purpose">Tikslas</label><input id="purpose" name="purpose" maxlength="200" autocomplete="off" placeholder="Pvz. prekių priėmimo mokymai"></div>
+        </div>
+
+        <div class="field">
+          <label for="comment">Komentaras <span class="opt">neprivaloma</span></label>
+          <textarea id="comment" name="comment" rows="3" maxlength="500"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn primary block" type="submit" id="submit-req"><i class="ph ph-signature" aria-hidden="true"></i>Pateikti ir pasirašyti</button>
+          <a class="btn ghost" href="#/mine">Atšaukti</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- Prašymo detalės -->
+    <section class="view" id="view-request" aria-labelledby="req-title">
+      <a class="back" href="#/mine"><i class="ph ph-arrow-left" aria-hidden="true"></i>Mano prašymai</a>
+      <div id="request-body"></div>
+    </section>
+
+    <!-- Demo pasirašymas -->
+    <section class="view" id="view-sign" aria-labelledby="sid-title">
+      <div id="sign-body"></div>
+    </section>
+
+    <!-- Tabelis -->
+    <section class="view" id="view-timesheet" aria-labelledby="ts-title">
+      <div class="ts-head">
+        <h1 id="ts-title">Tabelis</h1>
+        <div class="month-nav">
+          <button class="btn icon" type="button" id="ts-prev" aria-label="Ankstesnis mėnuo"><i class="ph ph-caret-left" aria-hidden="true"></i></button>
+          <b id="ts-month" aria-live="polite"></b>
+          <button class="btn icon" type="button" id="ts-next" aria-label="Kitas mėnuo"><i class="ph ph-caret-right" aria-hidden="true"></i></button>
+        </div>
+      </div>
+      <ul class="legend" aria-label="Žymėjimai">
+        <li><span class="mk A">A</span>Kasmetinės atostogos</li>
+        <li><span class="mk NA">NA</span>Nemokamos atostogos</li>
+        <li><span class="mk MA">MA</span>Mokymosi atostogos</li>
+        <li><span class="mk K">K</span>Komandiruotė</li>
+        <li><span class="mk off"></span>Poilsio ir šventinės dienos</li>
+      </ul>
+      <div class="panel ts-wrap" id="ts-body"></div>
+    </section>
+
+    <!-- Pašto dėžutė -->
+    <section class="view" id="view-outbox" aria-labelledby="ob-title">
+      <h1 id="ob-title">Pašto dėžutė (demo)</h1>
+      <p class="lede">Demo laiškai niekam nesiunčiami. Čia matote, ką sistema būtų išsiuntusi, ir galite atidaryti nuorodą iš laiško.</p>
+      <div id="outbox-list" class="mail-list"></div>
+      <div class="danger-zone panel panel-pad" id="reset-zone" data-need="hr" hidden>
+        <div><h2>Demo duomenys</h2><p class="hint">Ištrina visus prašymus, parašus ir laiškus, grąžina pradinius likučius.</p></div>
+        <button class="btn danger" type="button" id="reset-btn"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>Atstatyti demo duomenis</button>
+      </div>
+    </section>
+  </main>
+  </div>
+</div>
+
+<dialog class="confirm" id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+  <form method="dialog">
+    <h2 id="confirm-title"></h2>
+    <p id="confirm-text"></p>
+    <div class="dialog-actions">
+      <button class="btn" value="cancel" type="submit" id="confirm-cancel"></button>
+      <button class="btn danger" value="confirm" type="submit" id="confirm-ok"></button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="/static/hr.js"></script>
+<script src="/static/hr-form.js"></script>
+<script src="/static/hr-sign.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"uno-apskaita","runtimeExecutable":"py","runtimeArgs":["-3.12","-m","uvicorn","app.main:app","--port","8770"],"port":8770}]}

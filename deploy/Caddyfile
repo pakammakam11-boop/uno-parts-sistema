@@ -1,0 +1,36 @@
+# Automatinis HTTPS (Let's Encrypt) domenui ${DOMAIN}. DNS A įrašas turi rodyti į VPS prieš pirmą paleidimą.
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Įkėlimai (PDF, XLSX): UNO riba 20 MB
+	request_body {
+		max_size 25MB
+	}
+
+	# Maršrutai neturi savo prisijungimo: kiekviena užklausa pirma tikrinama UNO programoje (/_gate).
+	# Nėra galiojančios sesijos: 302 į /app (prisijungimas), tada atgal į /marsrutai/.
+	@marsrutai path /marsrutai /marsrutai/* /out/*
+	handle @marsrutai {
+		forward_auth app:8000 {
+			uri /_gate
+		}
+		reverse_proxy marsrutai:8787
+	}
+
+	handle {
+		reverse_proxy app:8000
+	}
+}
